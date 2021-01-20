@@ -24,7 +24,7 @@ router.get('/getData', (req, res) => {
 
 
 router.post('/signup',
-  (req, res, next) => {                           //register method will be added auto by passport in user model
+  (req, res, next) => {
 
     User.register(new User({ username: req.body.username }), req.body.password,
       (err, user) => {
@@ -35,10 +35,11 @@ router.post('/signup',
         }
         else {
           if (req.body.dob)
-            console.log('\n\nDOB ' + req.body.dob)
-          user.dob = req.body.dob //new Date(req.body.dob);
-          if (req.body.name)
-            user.name = req.body.name;
+            user.dob = req.body.dob
+          if (req.body.Fname)
+            user.Fname = req.body.Fname;
+          if (req.body.Lname)
+            user.Lname = req.body.Lname;
           user.save(
             (err, user) => {
               if (err) {
@@ -51,11 +52,63 @@ router.post('/signup',
                 var token = authenticate.getToken({ _id: req.user._id });
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
-                res.json({ success: true, status: 'Registration Successful!', token: token });
+                res.json(
+                  {
+                    success: true,
+                    status: 'Registration Successful!',
+                    token: token,
+                    userInfo: {
+                      id: user._id,
+                      Fname: user.Fname,
+                      Lname: user.Lname,
+                      dob: user.dob,
+                      email: user.username
+                    }
+                  }
+                );
               });
             });
         }
       });
   });
+
+
+
+router.post('/login', passport.authenticate('local'), (req, res) => {
+
+  var token = authenticate.getToken({ _id: req.user._id });
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.json(
+    {
+      success: true,
+      status: 'Registration Successful!',
+      token: token,
+      userInfo: {
+        id: req.user._id,
+        Fname: req.user.Fname,
+        Lname: req.user.Lname,
+        dob: req.user.dob,
+        email: req.user.username
+      }
+    }
+  );
+});
+
+
+
+router.get('/logout', (req, res) => {
+  if (req.session) {
+    req.session.destroy(); //clearing user cookie from server site
+    res.clearCookie('session-id'); //clearing session from client site
+    //res.redirect('/');  //redirect to home page
+    res.json({ success: true, });
+  }
+  else {
+    var err = new Error('You are not logged in!');
+    err.status = 403;
+    next(err);
+  }
+});
 
 module.exports = router;

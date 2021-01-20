@@ -3,7 +3,11 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var timeout = require('connect-timeout');
+var passport = require('passport');
 var app = express();
+
+app.use(timeout('5s'))
 
 var mongoose = require('mongoose');
 const config = require('./config');
@@ -11,7 +15,7 @@ const config = require('./config');
 
 //---------Mongoose-----------
 const url = config.mongoUrl;
-const connect = mongoose.connect(url);
+const connect = mongoose.connect(url,{ useNewUrlParser: true });
 
 connect.then(
   (db) => {
@@ -35,6 +39,9 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+app.use(passport.initialize());
+
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -48,23 +55,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 // });
 
 app.use('/users', usersRouter);
-
-function auth(req, res, next) {
-  //user field is added by passport from  feched data base
-  if (!req.user) {
-    var err = new Error('You are not authenticated!');
-    err.status = 403;
-    next(err);
-  }
-  else {
-    next();
-  }
-
-}
-
-app.use(auth);
-
-
 
 app.use('/', indexRouter);
 
