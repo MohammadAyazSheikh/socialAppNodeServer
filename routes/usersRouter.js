@@ -2,12 +2,55 @@ var express = require('express');
 var router = express.Router();
 var User = require('../models/userModel');
 var passport = require('passport');
-var authenticate = require('../authenticate')
+var authenticate = require('../authenticate');
+var Users = require('../models/userModel')
 
+// authenticate.verifyUser
 /* GET users listing. */
-router.get('/', function (req, res, next) {
-  res.send('respond with a resource in User Route');
-});
+
+
+// Users.find({"fname" : {$regex : ".*son.*"}})
+// .then((users) => {
+//   res.statusCode = 200;
+//   res.setHeader('Content-Type', 'application/json');
+//   res.json(users);
+// }, (err) => next(err))
+// .catch((err) => next(err));
+
+router.route('/')
+  .get((req, res, next) => {
+
+    Users.find({})
+      .then((users) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(users);
+      }, (err) => next(err))
+      .catch((err) => next(err));
+  })
+  .post((req, res, next) => {
+
+    Users.find({})
+      .then((users) => {
+
+        let _users = [];
+        const filterUsers = users.map(
+          (val) => {
+
+            let name = val.fname + val.lname;
+            name = name.toLowerCase();
+            if (name.includes(req.body.name)) {
+              _users.push(val);
+            }
+
+          }
+        );
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(_users);
+      }, (err) => next(err))
+      .catch((err) => next(err));
+  })
 
 
 
@@ -36,10 +79,16 @@ router.post('/signup',
         else {
           if (req.body.dob)
             user.dob = req.body.dob
-          if (req.body.Fname)
-            user.Fname = req.body.Fname;
-          if (req.body.Lname)
-            user.Lname = req.body.Lname;
+          if (req.body.fname)
+            user.fname = req.body.fname;
+          if (req.body.lname)
+            user.lname = req.body.lname;
+          if (req.body.addr)
+            user.addr = req.body.addr;
+          if (req.body.edu)
+            user.edu = req.body.edu;
+          if (req.body.gender)
+            user.gender = req.body.gender;
           user.save(
             (err, user) => {
               if (err) {
@@ -59,10 +108,13 @@ router.post('/signup',
                     token: token,
                     userInfo: {
                       id: user._id,
-                      Fname: user.Fname,
-                      Lname: user.Lname,
+                      fname: user.fname,
+                      lname: user.lname,
                       dob: user.dob,
-                      email: user.username
+                      email: user.username,
+                      addr: user.addr,
+                      edu: user.edu,
+                      gender: user.gender
                     }
                   }
                 );
@@ -82,14 +134,17 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
   res.json(
     {
       success: true,
-      status: 'Registration Successful!',
+      status: 'Log In succesfull!',
       token: token,
       userInfo: {
         id: req.user._id,
-        Fname: req.user.Fname,
-        Lname: req.user.Lname,
+        fname: req.user.fname,
+        lname: req.user.lname,
         dob: req.user.dob,
-        email: req.user.username
+        email: req.user.username,
+        addr: req.user.addr,
+        edu: req.user.edu,
+        gender: req.user.gender
       }
     }
   );
@@ -97,18 +152,14 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
 
 
 
-router.get('/logout', (req, res) => {
-  if (req.session) {
-    req.session.destroy(); //clearing user cookie from server site
-    res.clearCookie('session-id'); //clearing session from client site
-    //res.redirect('/');  //redirect to home page
+router.get('/logout', authenticate.verifyUser, (req, res, next) => {
+
+  if (req.user) {
     res.json({ success: true, });
+  } else {
+    res.json({ success: false, status: 'You are not logged In..!', });
   }
-  else {
-    var err = new Error('You are not logged in!');
-    err.status = 403;
-    next(err);
-  }
+
 });
 
 module.exports = router;

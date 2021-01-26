@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('socialappserver:server');
 var http = require('http');
+var socket = require('socket.io');
 
 /**
  * Get port from environment and store in Express.
@@ -26,6 +27,7 @@ app.set('trust proxy', function (ip) {
  */
 
 var server = http.createServer(app);
+
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -54,6 +56,34 @@ function normalizePort(val) {
 
   return false;
 }
+//*********************socket***************************** */
+var io = socket(server);
+
+io.on('connection', (socket) => {
+
+  console.log('client connected', socket.id);
+
+  // // sending and recieving location
+  // socket.on('location', function(data){
+  //     console.log(data);
+  //     socket.broadcast.emit('location', data);
+  // });
+
+  //   // sending and recieving address
+  //   socket.on('addr', function(data){
+  //     console.log(data);
+  //     socket.broadcast.emit('addr', data);
+  // });
+
+  // // Handle typing event
+  // socket.on('typing', function(data){
+  //     socket.broadcast.emit('typing', data);
+  // });
+
+});
+
+
+module.exports = io;
 
 /**
  * Event listener for HTTP server "error" event.
