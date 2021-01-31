@@ -16,7 +16,7 @@ passport.deserializeUser(User.deserializeUser());       //getting user(user id) 
 //--------JWT-----------------
 exports.getToken = function (user) {
     //user is payload           //3600 sec = 1hr
-    return jwt.sign(user, config.secretKey, { expiresIn: 300 });
+    return jwt.sign(user, config.secretKey, { expiresIn: 3600 });
 };
 
 

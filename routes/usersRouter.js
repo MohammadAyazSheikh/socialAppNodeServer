@@ -4,7 +4,8 @@ var User = require('../models/userModel');
 var passport = require('passport');
 var authenticate = require('../authenticate');
 var Users = require('../models/userModel');
-const { json } = require('express');
+var Notification = require('../models/notificationModel');
+
 
 // authenticate.verifyUser
 /* GET users listing. */
@@ -29,31 +30,50 @@ router.route('/')
       }, (err) => next(err))
       .catch((err) => next(err));
   })
-  .post((req, res, next) => {
+  .post(authenticate.verifyUser,
+    (req, res, next) => {
 
-    Users.find({})
-      .then((users) => {
+      // let filterNotify = [];
 
-        let _users = [];
-        const filterUsers = users.map(
-          (val) => {
+      // Notification.find({}).then(
+      //   (notify) => {
 
-            let name = val.fname + val.lname;
-            name = name.toLowerCase();
-            if (name.includes(req.body.uname)) {
-              _users.push(val);
+      //     notify.map(
+      //       (val) => {
+
+      //         if (val.sendFrom == req.user._id) {
+      //           filterNotify.push(val.sendTo)
+      //         }
+      //       }
+      //     )
+      //   },
+      //   (err) => next(err)
+      // ).catch((err) => next(err));
+
+      Users.find({})
+        .then((users) => {
+
+          let _users = [];
+          const filterUsers = users.map(
+            (val) => {
+
+              let name = val.fname + val.lname;
+              name = name.toLowerCase();
+
+              if (name.includes(req.body.uname) && req.user.username !== val.username) {
+                _users.push(val);
+              }
+
             }
-
-          }
-        );
+          );
 
 
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.json(_users);
-      }, (err) => next(err))
-      .catch((err) => next(err));
-  })
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.json(_users);
+        }, (err) => next(err))
+        .catch((err) => next(err));
+    })
 
 
 
@@ -158,13 +178,13 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
 router.get('/logout', authenticate.verifyUser, (req, res, next) => {
 
 
-  console.log('*****LogOut outside if block called req.user value: '+JSON.stringify(req.user))
+  console.log('*****LogOut outside if block called req.user value: ' + JSON.stringify(req.user))
 
   if (req.user) {
     res.json({ success: true, });
     req.logOut();
 
-    console.log('*****LogOut called req.user value: '+JSON.stringify(req.user))
+    console.log('*****LogOut called req.user value: ' + JSON.stringify(req.user))
   } else {
     res.json({ success: false, status: 'You are not logged In..!', });
   }
