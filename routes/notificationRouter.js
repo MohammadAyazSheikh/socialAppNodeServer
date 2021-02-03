@@ -11,7 +11,8 @@ notificationsRouter.route('/')
     .get(authenticate.verifyUser,
         (req, res, next) => {
 
-            let filterNotify = [];
+            var filterNotify = [];
+
 
             Notification.find({})
                 .then(
@@ -24,24 +25,60 @@ notificationsRouter.route('/')
                                     filterNotify.push(val)
                                 }
                             })
+
+                            console.log('filtered notifications ', filterNotify + "\n");
+
+                            res.statusCode = 200;
+                            res.setHeader('Content-Type', 'application/json');
+                            res.json(filterNotify);
                         }
                         else if (req.query.recieved) {
+                            console.log("\n\n************************************** rev *****************************\n\n")
+                            var recvNot = [];
                             notify.map((val) => {
 
                                 if (val.sendTo == req.user._id) {
-                                    filterNotify.push(val)
+
+                                    Users.findById({ _id: val.sendFrom }).then((user) => {
+                                        console.log('\n\nfind block')
+                                        let u = {
+                                            name: user.fname + " " + user.lname,
+                                            uId: user._id,
+                                            notificId: val.id
+                                        }
+                                        //console.log(JSON.stringify(u));
+                                        recvNot.push(u);
+                                        filterNotify.push(u);
+                                        console.log('filtered notifications\n');
+                                        console.log(recvNot);
+                                        //console.log(filterNotify);
+                                    },
+                                        (err) => next(err)
+                                    ).then(
+                                        () => {
+
+                                            res.statusCode = 200;
+                                            res.setHeader('Content-Type', 'application/json');
+                                            res.json({ "not": filterNotify });
+
+                                        }).catch((err) => next(err));
                                 }
                             })
                         }
                         else {
                             filterNotify = notify;
+                            console.log('filtered notifications ', filterNotify + "\n");
+
+                            res.statusCode = 200;
+                            res.setHeader('Content-Type', 'application/json');
+                            res.json(filterNotify);
                         }
 
-                        console.log('filtered notifications ', filterNotify + "\n");
+                        // console.log('filtered notifications ', filterNotify + "\n");
 
-                        res.statusCode = 200;
-                        res.setHeader('Content-Type', 'application/json');
-                        res.json(filterNotify);
+                        // res.statusCode = 200;
+                        // res.setHeader('Content-Type', 'application/json');
+                        // res.json(filterNotify);
 
                     },
                     (err) => next(err)
@@ -80,37 +117,76 @@ notificationsRouter.route('/')
         })
 
 //**************************For single notification******************************* */
-notificationsRouter.route('/:notificId')
+notificationsRouter.route('/:uId')
     .get(authenticate.verifyUser,
         (req, res, next) => {
 
-            Notification.findById(req.params.notificId)
-                .then((resp) => {
+            if (req.query.sent) {
 
-                    res.statusCode = 200;
-                    res.setHeader('Content-Type', 'application/json');
-                    res.json(resp);
+                Notification.find({ sendFrom: req.user._id, sendTo: req.params.uId })
+                    //.where('sendTo').equals(req.params.uId)
+                    .then((resp) => {
 
-                },
-                    (err) => next(err)
-                )
-                .catch((err) => next(err));
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json({ success: true });
+
+                    },
+                        (err) => next(err)
+                    )
+                    .catch((err) => next(err));
+            }
+            else if (req.query.recieved) {
+
+                Notification.find({ sendFrom: req.params.uId, sendTo: req.user._id })
+                    // .where('sendFrom').equals(req.params.uId)
+                    .then((resp) => {
+
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json({ success: true });
+
+                    },
+                        (err) => next(err)
+                    )
+                    .catch((err) => next(err));
+            }
         }
     )
     .delete(authenticate.verifyUser,
         (req, res, next) => {
 
-            Notification.findByIdAndRemove(req.params.notificId)
-                .then((resp) => {
+            if (req.query.sent) {
 
-                    res.statusCode = 200;
-                    res.setHeader('Content-Type', 'application/json');
-                    res.json({ succes: true });
+                Notification.remove({ sendFrom: req.user._id, sendTo: req.params.uId })
+                    //.where('sendTo').equals(req.params.uId)
+                    .then((resp) => {
 
-                },
-                    (err) => next(err)
-                )
-                .catch((err) => next(err));
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json({ success: true });
+
+                    },
+                        (err) => next(err)
+                    )
+                    .catch((err) => next(err));
+            }
+            else if (req.query.recieved) {
+
+                Notification.remove({ sendFrom: req.params.uId, sendTo: req.user._id })
+                    // .where('sendFrom').equals(req.params.uId)
+                    .then((resp) => {
+
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json({ success: true });
+
+                    },
+                        (err) => next(err)
+                    )
+                    .catch((err) => next(err));
+            }
+
         }
     )
 
